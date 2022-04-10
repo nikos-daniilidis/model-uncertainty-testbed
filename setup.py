@@ -1,0 +1,32 @@
+from setuptools import setup, find_packages
+
+setup(
+ name='modunc',
+ version='0.1',
+ author='Nikos Daniilidis',
+ author_email='nikos.daniilidis@gmail.com',
+ license='MIT',
+ classifiers=[
+ 'Development Status :: Alpha',
+ 'Intended Audience :: Developers',
+ 'Intended Audience :: Science/Research',
+ 'License :: OSI Approved :: Apache Software License',
+ 'Operating System :: OS Independent',
+ 'Programming Language :: Python',
+ 'Programming Language :: Python :: 3',
+ 'Programming Language :: Python :: 3.7',
+ 'Programming Language :: Python :: 3 :: Only',
+ 'Topic :: Scientific/Engineering',
+ 'Topic :: Scientific/Engineering :: Artificial Intelligence',
+ 'Topic :: Scientific/Engineering :: Mathematics',
+ 'Topic :: Software Development',
+ 'Topic :: Software Development :: Libraries',
+ 'Topic :: Software Development :: Libraries :: Python Modules',
+ ],
+ namespace_packages=[],
+ packages=find_packages(),
+ python_requires='>=3.7, <4',
+ zip_safe=True,
+ include_package_data=True,
+ description='Machine learning model uncertainty testbed',
+)
