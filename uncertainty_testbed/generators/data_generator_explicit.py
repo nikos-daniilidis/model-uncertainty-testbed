@@ -8,7 +8,7 @@ __author__ = "nikos.daniilidis"
 
 class AnalyticBinaryClassGenerator(BinaryClassGeneratorBase, ABC):
     """
-    Class which generates labeled data following analytic functional forms. The features follow iid gaussian
+    Class which generates labeled data following explicit functional forms. The features follow iid gaussian
     distributions. The labels are determined as:
         gauss: \sum_{i=1}^{n}(c_i \dot x_i) + noise > t,
         chisq: \sum_{i=1}^{n}(x_i^2) + noise > t,

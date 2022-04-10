@@ -56,7 +56,8 @@ class BinaryClassGeneratorBase(object):
         Noise function which computes additive, heteroscedastic noise for input instances x. The labeling noise at
         instance x will be noise_scale(x)*n, where n follows a uniform, normal, cauchy, or chisq distribution (this is
         determined by the noise_distribution attribute). The chisq distribution defaults to num_inputs degrees of
-        freedom. The global scale of the noise is otherwise controlled by the noise_scale function from the constructor
+        freedom. The mean for all distributions is set to 0. The global scale of the noise is otherwise controlled by
+        the noise_scale function from the constructor.
         :param x: Numpy array of float with shape (num_events, num_inputs).
         :return: Array with noise values for the rows in x. Shape is (num_events, ).
         """
@@ -71,7 +72,7 @@ class BinaryClassGeneratorBase(object):
             return np.multiply(np.random.default_rng().standard_cauchy(num_events), self.noise_scale(x))
         elif self.noise_distribution == "chisq":
             df = self.noise_params["chisq"][0]
-            return np.multiply(np.random.default_rng().chisquare(df, num_events), self.noise_scale(x))
+            return np.multiply(np.random.default_rng().chisquare(df, num_events) - df, self.noise_scale(x))
         else:
             raise NotImplementedError("__get_noise() method not implemented for noise_distribution '{}'".
                                       format(self.noise_distribution))
