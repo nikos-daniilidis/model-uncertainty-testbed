@@ -41,17 +41,17 @@ class BinaryClassGeneratorBase(object):
                              "cauchy": None,
                              "chisq": (num_inputs,)}
 
-    def __get_scores(self, x: np.ndarray) -> np.ndarray:
+    def get_scores(self, x: np.ndarray) -> np.ndarray:
         """
         Get the hidden scores for a number of instances.
         :param x: Numpy array of float with shape (num_events, num_inputs).
         :return: Array with hidden scores for the rows in x. Shape is (num_events, ).
         """
         if self.score_fn is None:
-            raise RuntimeError("Call to __get_scores() without prior call to set_score_fn().")
+            raise RuntimeError("Call to get_scores() without prior call to set_score_fn().")
         return self.score_fn(x)
 
-    def __get_noise(self, x: np.ndarray) -> np.ndarray:
+    def get_noise(self, x: np.ndarray) -> np.ndarray:
         """
         Noise function which computes additive, heteroscedastic noise for input instances x. The labeling noise at
         instance x will be noise_scale(x)*n, where n follows a uniform, normal, cauchy, or chisq distribution (this is
@@ -74,7 +74,7 @@ class BinaryClassGeneratorBase(object):
             df = self.noise_params["chisq"][0]
             return np.multiply(np.random.default_rng().chisquare(df, num_events) - df, self.noise_scale(x))
         else:
-            raise NotImplementedError("__get_noise() method not implemented for noise_distribution '{}'".
+            raise NotImplementedError("get_noise() method not implemented for noise_distribution '{}'".
                                       format(self.noise_distribution))
 
     def get_labels(self, x: np.ndarray) -> np.ndarray:
@@ -84,7 +84,7 @@ class BinaryClassGeneratorBase(object):
         :param x: Numpy array of float with shape (num_events, num_inputs).
         :return: Array with class labels for the rows in x. Shape is (num_events, ).
         """
-        y = np.greater_equal(self.__get_scores(x) + self.__get_noise(x), self.threshold)
+        y = np.greater_equal(self.get_scores(x) + self.get_noise(x), self.threshold)
         return y.astype(int)
 
     def generate_unlabeled(self, num_events: int) -> np.ndarray:
@@ -128,9 +128,9 @@ class BinaryClassGeneratorBase(object):
             df = self.noise_params["chisq"][0]
             cdf = partial(chi2.cdf, df=df)
         else:
-            raise NotImplementedError("__get_noise() method not implemented for noise_distribution '{}'".
+            raise NotImplementedError("get_noise() method not implemented for noise_distribution '{}'".
                                       format(self.noise_distribution))
-        t = self.__get_scores(x) - self.threshold
+        t = self.get_scores(x) - self.threshold
         p0 = cdf(-np.divide(t, self.noise_scale(x)))
         return p0, 1-p0
 

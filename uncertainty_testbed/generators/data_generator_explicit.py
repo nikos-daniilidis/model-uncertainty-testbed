@@ -1,7 +1,9 @@
 from abc import ABC
+from functools import partial
 import numpy as np
 from scipy.stats import chi2, cauchy, norm
 from uncertainty_testbed.generators.data_generator_base import BinaryClassGeneratorBase
+from uncertainty_testbed.utilities.functions import map_to_constant
 
 __author__ = "nikos.daniilidis"
 
@@ -110,7 +112,7 @@ class AnalyticBinaryClassGenerator(BinaryClassGeneratorBase, ABC):
 
 
 def mini_check(name, noise_distribution, noise_magnitude):
-    s = lambda x: noise_magnitude * np.ones(x.shape[0])
+    s = partial(map_to_constant, c=noise_magnitude)
     eg = AnalyticBinaryClassGenerator(seed=42, num_inputs=10, name=name, threshold=0.5,
                                       noise_distribution=noise_distribution, noise_scale=s)
     x, y = eg.generate_labeled(10000)

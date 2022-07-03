@@ -4,6 +4,7 @@ import tensorflow as tf
 from tensorflow import keras
 from typing import List, Tuple, Optional, Union
 from uncertainty_testbed.uncertainty_models.uncertainty_base import ClassifierPosteriorBase
+from uncertainty_testbed.utilities.functions import safe_logodds
 
 __author__ = "nikos.daniilidis"
 
@@ -50,34 +51,57 @@ class MCDropoutKerasClassification(ClassifierPosteriorBase, ABC):
     def fit(self, x: Union[np.ndarray, tf.Tensor], y: Union[np.ndarray, tf.Tensor], **kwargs):
         self.model.fit(x, y, **kwargs)
 
-    def sample_posterior_proba(self, x: Union[np.ndarray, tf.Tensor], n: int, **kwargs) \
-            -> List[Optional[Union[np.ndarray, tf.Tensor]]]:
+    def sample_posterior_proba(self, x: Union[np.ndarray, tf.Tensor], n: int, **kwargs) -> Union[np.ndarray, tf.Tensor]:
         """Sample from the posterior probability at input x."""
-        preds = [self.model(x) for _ in range(n)]
+        if len(x.shape) == 1:  # if sending in a single row of x
+            rows = 1
+        else:
+            rows = x.shape[0]
+        xx = np.tile(x, (n, 1))
+        yy = self.model.predict(xx)
+        if len(yy.shape) == 1:  # if sending in a single row of x and drawing only one sample
+            outputs = yy.shape
+        else:
+            outputs = yy.shape[1]
+        preds = np.reshape(yy, (n, rows, outputs), order='c')
         return preds
 
     def posterior_mean_proba(self, x: Union[np.ndarray, tf.Tensor], n: int, **kwargs) -> Union[np.ndarray, tf.Tensor]:
         """Estimate the mean posterior probability at input x."""
-        preds = [self.model(x) for _ in range(n)]
-        return np.stack(preds).mean(axis=0)
+        preds = self.sample_posterior_proba(x, n)
+        return preds.mean(axis=0)
 
     def posterior_mean_logodds(self, x: Union[np.ndarray, tf.Tensor], n: int, **kwargs) -> Union[np.ndarray, tf.Tensor]:
         """Estimate the mean posterior logodds at input x."""
-        preds = [self.model(x) for _ in range(n)]
-        preds_logodds = np.log(np.stack(preds)/(1 - np.stack(preds)))
+        preds = self.sample_posterior_proba(x, n)
+        preds_logodds = safe_logodds(preds)
         return preds_logodds.mean(axis=0)
 
     def posterior_stddev_proba(self, x: Union[np.ndarray, tf.Tensor], n: int, **kwargs) -> Union[np.ndarray, tf.Tensor]:
         """Estimate the posterior probability standard deviation at input x."""
-        preds = [self.model(x) for _ in range(n)]
-        return np.stack(preds).std(axis=0)
+        preds = self.sample_posterior_proba(x, n)
+        return preds.std(axis=0)
 
     def posterior_stddev_logodds(self, x: Union[np.ndarray, tf.Tensor], n: int, **kwargs) \
             -> Union[np.ndarray, tf.Tensor]:
         """Estimate the posterior logodds standard deviation at input x."""
-        preds = [self.model(x) for _ in range(n)]
-        preds_logodds = np.log(np.stack(preds) / (1 - np.stack(preds)))
+        preds = self.sample_posterior_proba(x, n)
+        preds_logodds = safe_logodds(preds)
         return preds_logodds.std(axis=0)
+
+    def posterior_percentile_proba(self, x: Union[np.ndarray, tf.Tensor], n: int, q: Tuple[float], **kwargs) \
+            -> Union[np.array, float]:
+        """Estimate the posterior probability percentiles q at input x."""
+        preds = self.sample_posterior_proba(x, n)
+        return np.percentile(preds, q, **kwargs)
+
+    def posterior_percentile_logodds(self, x: Union[np.ndarray, tf.Tensor], n: int, q: Tuple[float], **kwargs) \
+            -> Union[np.array, float]:
+        """Estimate the posterior logodds percentiles q at input x. Assumes binary classification with sigmoid."""
+        # TODO: Generalize to handle multi-class and non-sigmoid activation.
+        preds = self.sample_posterior_proba(x, n)
+        preds_logodds = safe_logodds(preds)
+        return np.percentile(preds_logodds, q, **kwargs)
 
 
 if __name__ == "__main__":
@@ -86,6 +110,10 @@ if __name__ == "__main__":
     X_train = X_train.astype("float32")/255
     X_test = X_test.reshape(10000, 28 * 28)
     X_test = X_test.astype("float32") / 255
+    print(X_train.shape, y_train.shape)
+    print(type(X_train), type(y_train))
+    print(y_train.min(), y_train.max(), y_train.mean())
+    print(type(X_train[0, 0]), type(y_train[0]))
 
     layers = (
         MCDropoutLayer(0.25),
@@ -102,15 +130,18 @@ if __name__ == "__main__":
         metrics=("accuracy",),
         name="MCDropout"
     )
-    mcd_classifier.fit(X_train, y_train, epochs=1, batch_size=128)
+    mcd_classifier.fit(X_train, y_train, epochs=4, batch_size=128, validation_data=(X_test, y_test))
 
     samples = mcd_classifier.sample_posterior_proba(X_test[1:2, :], n=10)
     print("Sampled probabilities: {}".format(' '.join(str(samples))))
 
-    post_mean = mcd_classifier.posterior_mean_proba(X_test[1:2, :], n=100)
-    post_std = mcd_classifier.posterior_stddev_proba(X_test[1:2, :], n=100)
+    post_mean = mcd_classifier.posterior_mean_proba(X_test[1:3, :], n=100)
+    post_std = mcd_classifier.posterior_stddev_proba(X_test[1:3, :], n=100)
     print("Posterior probability mean(sd): {}({})".format(post_mean, post_std))
 
-    post_lo_mean = mcd_classifier.posterior_mean_logodds(X_test[1:2, :], n=100)
-    post_lo_std = mcd_classifier.posterior_stddev_logodds(X_test[1:2, :], n=100)
+    post_lo_mean = mcd_classifier.posterior_mean_logodds(X_test[1:3, :], n=100)
+    post_lo_std = mcd_classifier.posterior_stddev_logodds(X_test[1:3, :], n=100)
     print("Posterior logodds mean(sd): {}({})".format(post_lo_mean, post_lo_std))
+
+    post_lo_percemtile = mcd_classifier.posterior_percentile_logodds(X_test[1:3, :], n=300)
+
