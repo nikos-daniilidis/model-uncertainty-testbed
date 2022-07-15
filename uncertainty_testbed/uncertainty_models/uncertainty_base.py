@@ -1,8 +1,11 @@
-import numpy as np
-import tensorflow as tf
-from typing import List, Optional, Union
+"""Base class for models producing classifier prediction uncertainty estimates."""
 
 __author__ = "nikos.daniilidis"
+
+
+import numpy as np
+import tensorflow as tf
+from typing import List, Tuple, Optional, Union
 
 
 class ClassifierPosteriorBase(object):
@@ -38,4 +41,15 @@ class ClassifierPosteriorBase(object):
     def posterior_stddev_logodds(self, x: Union[np.ndarray, tf.Tensor], n: int, **kwargs) \
             -> Union[np.ndarray, tf.Tensor]:
         """Estimate the posterior logodds standard deviation at input x."""
+        raise NotImplementedError
+
+    def posterior_percentile_proba(self, x: Union[np.ndarray, tf.Tensor], n: int, q: Tuple[float, float], **kwargs) \
+            -> Union[np.array, float]:
+        """Estimate the posterior probability percentiles q at input x."""
+        raise NotImplementedError
+
+    def posterior_percentile_logodds(self, x: Union[np.ndarray, tf.Tensor], n: int, q: Tuple[float, float], **kwargs) \
+            -> Union[np.array, float]:
+        """Estimate the posterior logodds percentiles q at input x. Assumes binary classification with sigmoid."""
+        # TODO: Generalize to handle multi-class and non-sigmoid activation.
         raise NotImplementedError

@@ -1,11 +1,14 @@
+"""Class implementing the ad-hoc event generator. Supports explicitly defined mappings from iid gaussian features
+to latent scores and observed binary outcomes."""
+
+__author__ = "nikos.daniilidis"
+
 from abc import ABC
 from functools import partial
 import numpy as np
 from scipy.stats import chi2, cauchy, norm
 from uncertainty_testbed.generators.data_generator_base import BinaryClassGeneratorBase
 from uncertainty_testbed.utilities.functions import map_to_constant
-
-__author__ = "nikos.daniilidis"
 
 
 class AnalyticBinaryClassGenerator(BinaryClassGeneratorBase, ABC):

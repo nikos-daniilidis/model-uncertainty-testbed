@@ -1,9 +1,11 @@
+"""Base class for binary classification data set generators. Implements all reusable methods. """
+
+__author__ = "nikos.daniilidis"
+
 from functools import partial
 import numpy as np
 from typing import Tuple, Union
 from scipy.stats import uniform, norm, cauchy, chi2
-
-__author__ = "nikos.daniilidis"
 
 
 class BinaryClassGeneratorBase(object):

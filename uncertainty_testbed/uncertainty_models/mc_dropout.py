@@ -1,3 +1,7 @@
+"""Implementation of classifier posterior base using MC Dropout."""
+
+__author__ = "nikos.daniilidis"
+
 from abc import ABC
 import numpy as np
 import tensorflow as tf
@@ -5,8 +9,6 @@ from tensorflow import keras
 from typing import List, Tuple, Optional, Union
 from uncertainty_testbed.uncertainty_models.uncertainty_base import ClassifierPosteriorBase
 from uncertainty_testbed.utilities.functions import safe_logodds
-
-__author__ = "nikos.daniilidis"
 
 
 class MCDropoutLayer(keras.layers.Dropout):
@@ -89,13 +91,13 @@ class MCDropoutKerasClassification(ClassifierPosteriorBase, ABC):
         preds_logodds = safe_logodds(preds)
         return preds_logodds.std(axis=0)
 
-    def posterior_percentile_proba(self, x: Union[np.ndarray, tf.Tensor], n: int, q: Tuple[float], **kwargs) \
+    def posterior_percentile_proba(self, x: Union[np.ndarray, tf.Tensor], n: int, q: Tuple[float, float], **kwargs) \
             -> Union[np.array, float]:
         """Estimate the posterior probability percentiles q at input x."""
         preds = self.sample_posterior_proba(x, n)
         return np.percentile(preds, q, **kwargs)
 
-    def posterior_percentile_logodds(self, x: Union[np.ndarray, tf.Tensor], n: int, q: Tuple[float], **kwargs) \
+    def posterior_percentile_logodds(self, x: Union[np.ndarray, tf.Tensor], n: int, q: Tuple[float, float], **kwargs) \
             -> Union[np.array, float]:
         """Estimate the posterior logodds percentiles q at input x. Assumes binary classification with sigmoid."""
         # TODO: Generalize to handle multi-class and non-sigmoid activation.

@@ -1,3 +1,8 @@
+"""Checks for Chi Squared event generator."""
+
+__author__ = "nikos.daniilidis"
+
+
 from functools import partial
 from tensorflow import keras
 from matplotlib import pyplot as plt
