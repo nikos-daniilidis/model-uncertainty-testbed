@@ -10,9 +10,10 @@ from functools import partial
 from uncertainty_testbed.generators.data_generator_explicit import AnalyticBinaryClassGenerator
 from uncertainty_testbed.utilities.functions import map_to_constant
 from experiments.experiment_utils.train_utils import generate_full, hyperparameter_scan, train_from_params
-from experiments.experiment_utils.plot_utils import plot_training_curves, get_smoothed_scores_probs_preds, plot_xy, \
-    plot_hist, plot_x1y1x2y2, plot_hexbin, plot_decision_data
-from experiments.model_templates.sequential_dropout_dnn_classifier import SequentialDropout_10_60_025_x3_Template
+from experiments.experiment_utils.plot_utils import plot_training_curves, get_smoothed_scores_probs_preds, plot_xys, \
+    plot_hist, plot_hexbin, plot_decision_data
+from experiments.model_templates.sequential_dropout_dnn_classifier import SequentialDropout_10_60_025_x3_ScanTemplate
+
 
 dimensions = 10
 event_name = "cauchy"
@@ -29,7 +30,7 @@ data = generate_full(eg, n_all, n_train, n_val)
 x_train, y_train, x_val, y_val = data
 
 # In[3]:
-template = SequentialDropout_10_60_025_x3_Template()  # define model structure and hyperparameter scan schedule
+template = SequentialDropout_10_60_025_x3_ScanTemplate()  # define model structure and hyperparameter scan schedule
 champion_params, scan_results = hyperparameter_scan(template, data)  # perform hyperparameter scan, return winning parameters
 
 # In[4]:
@@ -43,11 +44,11 @@ plot_training_curves(history)  # plot loss and auc train metrics from history ob
 scores, probs, p = get_smoothed_scores_probs_preds(model, eg, x_val[:1000, :], 5)
 
 # In[8]:
-plot_xy(scores, p, 'latent scores', 'p_hat', '--b')
+plot_xys(scores, ((p, '--b'),), 'latent scores', 'p_hat')
 plot_hist(scores, 50, 'latent scores')
 
 # In[9]:
-plot_x1y1x2y2(probs, probs, probs, p, 'p', 'p_hat', '--g', '--b')
+plot_xys(probs, ((probs, '--g'), (p, '--b')), 'p', 'p_hat')
 plot_hist(x=probs, bins=50, xlabel='p', color='g', alpha=0.5)
 
 # In[10]:
