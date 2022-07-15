@@ -1,21 +1,38 @@
 """Class definitions keeping all the parameters for model architectures and hyperparameter scans in one place."""
+
 __author__ = "nikos.daniilidis"
 
 from abc import ABC
 from tensorflow import keras
 from typing import List
+from experiments.model_templates.base_model_scan_template import ModelScanTemplate
+from uncertainty_testbed.uncertainty_models.mc_dropout import MCDropoutLayer, MCDropoutKerasClassification
 
 
-class ModelScanTemplate(object):
-    """Convenience class which binds together a model architecture and the parameters for a scan."""
-    def model(self):
-        raise NotImplementedError
+def build_mcdropout_model(optimizer) -> keras.Model:
+    """Function which builds the model corresponding to the scan template in the corresponding ScanTemplate class.
+    Note that this model uses MCDropout layer a d not Dropout layer. Currently it is up to the user to ensure the
+    model specification is the same in both places."""
+    layers = (
+        keras.layers.Dense(60, activation="relu"),
+        MCDropoutLayer(0.25),
+        keras.layers.Dense(60, activation="relu"),
+        MCDropoutLayer(0.25),
+        keras.layers.Dense(60, activation="relu"),
+        MCDropoutLayer(0.25),
+        keras.layers.Dense(1, activation="sigmoid")
+    )
+    model = MCDropoutKerasClassification(
+        layer_tuple=layers,
+        optimizer=optimizer,
+        loss="binary_crossentropy",
+        metrics=("accuracy", "AUC"),
+        name="MCDropout"
+    )
+    return model
 
-    def scan_schedule(self) -> List[dict]:
-        raise NotImplementedError
 
-
-class SequentialDropout_10_60_025_x3_Template(ModelScanTemplate, ABC):
+class SequentialDropout_10_60_025_x3_ScanTemplate(ModelScanTemplate, ABC):
     """Convenience class which binds together a model architecture and the parameters for a scan."""
     def __init__(self):
         self.scan_schedule = self.scan_schedule()
